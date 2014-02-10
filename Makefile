@@ -10,19 +10,19 @@ endif
 
 .PHONY: rel deps package pkgclean
 
-all: deps compile
+all: compile
 
-compile:
+compile: ebin/make_intercept_c.escript \
+         ebin/example_environment.sh
 	$(REBAR_BIN) compile
 	erlc -o ebin -I include scenario/*erl
 
-deps:
-	$(REBAR_BIN) get-deps
-
 clean:
 	$(REBAR_BIN) clean
+	rm -f ebin/*.escript
+	rm -f ebin/*.sh
 
-test: deps compile eunit
+test: compile eunit
 
 eunit:
 	$(REBAR_BIN) -v skip_deps=true eunit
@@ -31,3 +31,11 @@ NOW	= $(shell date +%s)
 COUNTER = $(PWD)/$(NOW).current_counterexample.eqc
 EQCINFO = $(PWD)/$(NOW).eqc-info
 
+ebin/make_intercept_c.escript: priv/scripts/make_intercept_c.escript
+	echo "#!/usr/bin/env escript" > $@
+	echo "%%! -pz $(PWD)/ebin" >> $@
+	cat $< >> $@
+	chmod +x $@
+
+ebin/example_environment.sh: priv/scripts/example_environment.sh
+	cp -p $< $@

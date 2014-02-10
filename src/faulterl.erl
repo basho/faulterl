@@ -229,7 +229,7 @@ make(OUT, C) ->
                 intercept_return_generic=ReturnGeneric} <- C],
     p(""),
 
-    [p("%%-export-%% ~s", [Sym]) || Sym <- lists:reverse(get(global_syms))],
+    [p("/*--export-- ~s */", [Sym]) || Sym <- lists:reverse(get(global_syms))],
     ok.
 
 bool_to_int(true) ->

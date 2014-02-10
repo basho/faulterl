@@ -1,4 +1,6 @@
 c_src/*.o
-ebin/*.beam
 ebin/*.app
+ebin/*.beam
+ebin/*.escript
+ebin/*.sh
 priv/faulterl.so
