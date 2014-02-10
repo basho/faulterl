@@ -3,8 +3,9 @@
 
 ## Prerequisites
 
-* Erlang/OTP R16B02 or later.  The library will probably work for
-  releases R15B and earlier, but I haven't tried it yet.
+* Erlang/OTP R15B01 or later.  The library may work for
+  releases R14B, but I haven't tested it.  I have tested R15B01 and
+  R16B02.
 
 * OS X or Linux.  I fully intend to support Solaris/SmartOS/OmniOS
   and FreeBSD, but I haven't tested it yet.  I have tested OS X 10.8.5
