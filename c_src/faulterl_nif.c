@@ -19,6 +19,11 @@
 // under the License.
 //
 // -------------------------------------------------------------------
+
+#ifdef	linux
+#define _GNU_SOURCE
+#endif
+
 #include <stdio.h>
 #include <errno.h>
 #include <fcntl.h>

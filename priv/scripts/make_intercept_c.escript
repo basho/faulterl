@@ -4,7 +4,9 @@
 platform() ->
     case os:cmd("uname -s") of
         "Darwin\n" ->
-            osx
+            osx;
+        "Linux\n" ->
+            linux
     end.
 
 main([InConfigName, OutCBase]) ->
@@ -19,7 +21,9 @@ main([InConfigName, OutCBase]) ->
     io:format("~s", [Out1]),
     Cmd2 = case platform() of
                osx ->
-                   "gcc -g -o " ++ OutCBase ++ ".dylib -O0 -shared -Xlinker -exported_symbols_list -Xlinker " ++ OutExport ++ " " ++ OutCPath
+                   "gcc -g -o " ++ OutCBase ++ ".dylib -O0 -shared -Xlinker -exported_symbols_list -Xlinker " ++ OutExport ++ " " ++ OutCPath;
+               linux ->
+                   "gcc -g -o " ++ OutCBase ++ ".so " ++ OutCPath ++ " -O0 -shared -fPIC -lrt -ldl"
            end,
     io:format("~s\n", [Cmd2]),
     Out2 = os:cmd(Cmd2),

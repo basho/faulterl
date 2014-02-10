@@ -47,6 +47,10 @@ make(OUT, C) ->
 
     px(?LICENSE),
 
+    p("#ifdef linux"),
+    p("#define _GNU_SOURCE"),
+    p("#endif"),
+
     [px("#include ~s\n", [Hdr]) ||
         Hdr <- ["<stdio.h>", "<stdlib.h>", "<stdarg.h>", "<dlfcn.h>",
                 "<sys/types.h>", "<sys/errno.h>"]],

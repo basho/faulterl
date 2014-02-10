@@ -6,8 +6,11 @@
 * Erlang/OTP R16B02 or later.  The library will probably work for
   releases R15B and earlier, but I haven't tried it yet.
 
-* OS X.  I fully intend to support Linux and Solaris/SmartOS/OmniOS
-  and FreeBSD, but I haven't tested it yet.
+* OS X or Linux.  I fully intend to support Solaris/SmartOS/OmniOS
+  and FreeBSD, but I haven't tested it yet.  I have tested OS X 10.8.5
+  and Linux 3.2 on a Debian 7.x/"wheezy/sid" distribution.
+
+* C compiler toolchain based on GCC or command-line-compatible compiler.
 
 ## Example use:
 

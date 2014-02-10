@@ -28,11 +28,22 @@
 config() ->
     [trigger_random:config()] ++
     [
-     #fi{
+     #fi{	% OS X version
          name = "unlink",
          type = intercept,
          intercept_args = "const char *path",
          intercept_args_call = "path",
+         c_headers = ["<unistd.h>"],
+         intercept_errno = "EREMOTE",
+         intercept_return_type = "int",
+         intercept_return_value = "-1",
+         intercept_triggers = [{"random", "random_always", "100"}]
+     },
+     #fi{
+         name = "unlinkat",	% Linux 3.2 version
+         type = intercept,
+         intercept_args = "int __fd, __const char *__name, int __flag",
+         intercept_args_call = "__fd, __name, __flag",
          c_headers = ["<unistd.h>"],
          intercept_errno = "EREMOTE",
          intercept_return_type = "int",
