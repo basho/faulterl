@@ -48,6 +48,10 @@ Now, let's use it and see what happens.
 Yay, we cannot delete the file.  The intercept library is definitely
 lying to us.
 
+## The NIFs: peek and poke
+
+
+
 ## License
 
     %% Copyright (c) 2014 Basho Technologies, Inc. All Rights Reserved.

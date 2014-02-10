@@ -217,7 +217,6 @@ make(OUT, C) ->
                  px(ReturnGeneric)
          end,
          p("    } else {"),
-         p("fprintf(stderr, \"real = 0x%p\\r\\n\", real);"),
          p("        res = (*real)(~s);", [ArgsCall]),
          p("    }"),
          p("    if (bc_fi_verbose || bc_fi_~s_verbose) {", [Name]),
