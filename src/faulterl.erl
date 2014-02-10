@@ -58,10 +58,10 @@ make(OUT, C) ->
      end || {Name, HdrList} <- I_Hdrs, Hdr <- HdrList],
     p(""),
 
-    [begin
-         p("u_int8_t  ~s = 1;", [X]),
-         push(global_syms, X)
-     end || X <- ["bc_fi_enabled", "bc_fi_verbose"]],
+    p("u_int8_t  bc_fi_enabled = 1;"),
+    push(global_syms, "bc_fi_enabled"),
+    p("u_int8_t  bc_fi_verbose = 0;"),
+    push(global_syms, "bc_fi_verbose"),
     p(""),
 
     [begin
@@ -173,10 +173,16 @@ make(OUT, C) ->
          [p("    static bc_fi_~s_t *a_~s = NULL;", [TType, TInstance]) ||
              {TType, TInstance, _Args} <- Triggers],
          p("    static char *real_name = \"~s\";", [Name]),
-         p("    static ~s (*real)();", [FReturnT]),
+         p("    static ~s (*real)() = NULL;", [FReturnT]),
          p("    int trigger;"),
          p("    ~s res;", [FReturnT]),
          p(""),
+         p("    if (real == NULL) {"),
+         p("        if ((real = (int (*)()) dlsym(RTLD_NEXT, real_name)) == NULL) {"),
+         p("            fprintf(stderr, \"Fatal error: %s\\r\\n\", dlerror());"),
+         p("            abort();"),
+         p("        }"),
+         p("    }"),
          p("    if (bc_fi_enabled) {"),
          [begin
               p("        if (a_~s == NULL) {", [TInstance]),
@@ -187,12 +193,6 @@ make(OUT, C) ->
               p("        }")
           end || {TType, TInstance, TArgs} <- Triggers],
 
-         p("        if (real == NULL) {"),
-         p("            if ((real = (int (*)()) dlsym(RTLD_NEXT, real_name)) == NULL) {"),
-         p("                fprintf(stderr, \"Fatal error: %s\\r\\n\", dlerror());"),
-         p("                abort();"),
-         p("            }"),
-         p("        }"),
          p("        trigger=1;"),
          [begin
               p("        if (trigger) {"),
@@ -213,6 +213,7 @@ make(OUT, C) ->
                  px(ReturnGeneric)
          end,
          p("    } else {"),
+         p("fprintf(stderr, \"real = 0x%p\\r\\n\", real);"),
          p("        res = (*real)(~s);", [ArgsCall]),
          p("    }"),
          p("    if (bc_fi_verbose || bc_fi_~s_verbose) {", [Name]),

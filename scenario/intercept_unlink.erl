@@ -20,23 +20,14 @@
 %%
 %% -------------------------------------------------------------------
 
--module(firsttry_unlink).
+-module(intercept_unlink).
 -export([config/0]).
 
 -include("faulterl.hrl").
 
 config() ->
     [trigger_random:config()] ++
-    [trigger_switchpanel:config()] ++
-    [trigger_timer:config()] ++
-    [trigger_call_count:config()] ++
     [
-     %% Intercept unlink(), when the following are true:
-     %%     * switchpanel: #42 is enabled
-     %%     * random: 50% uniform random chance
-     %%     * timer: a minimum of 5 seconds after start time
-     %%     * call_count: true if between 50th & 60th time that all of
-     %%                   the other criteria have been met.
      #fi{
          name = "unlink",
          type = intercept,
@@ -46,9 +37,6 @@ config() ->
          intercept_errno = "EREMOTE",
          intercept_return_type = "int",
          intercept_return_value = "-1",
-         intercept_triggers = [{"switchpanel", "switchpanel_42", "42"},
-                               {"random", "random_50", "50"},
-                               {"timer", "timer_5", "5"},
-                               {"call_count", "call_count_50_60", "50, 60"}]
+         intercept_triggers = [{"random", "random_always", "100"}]
      }
     ].
