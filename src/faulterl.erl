@@ -32,108 +32,7 @@
 
 -include("faulterl.hrl").
 
-make(OutFile) ->
-    %% For dev/test/debugging purposes only
-    make(OutFile,
-         [#fi{
-             name = "random",
-             type = trigger,
-             c_headers = ["<time.h>", "<string.h>"],
-             c_decl_extra = ["u_int32_t bc_fi_random_seed = 0;",
-                             "u_int8_t  bc_fi_random_reseed = 0;"],
-             extra_global_syms = ["bc_fi_random_seed",
-                                  "bc_fi_random_reseed"],
-             trigger_struct = "
-typedef struct {
-    char *i_name; /* Must be present */
-    int percent;
-}",
-             trigger_init = "
-    time_t t;
-
-    if (!bc_fi_random_seed) {
-        bc_fi_random_seed = time(&t);
-    }
-    srand(bc_fi_random_seed);
-",
-             trigger_new_instance_args = "int percent",
-             trigger_new_instance_body = "
-    a->percent = percent;
-",
-             trigger_body = "
-    if (bc_fi_random_reseed) {
-        srand(bc_fi_random_seed);
-        bc_fi_random_reseed = 0;
-    }
-    res = (rand() % 100) < a->percent;
-"
-            },
-          #fi{
-               name = "switchpanel",
-               type = trigger,
-               c_decl_extra = ["#define SWITCHPANEL_SIZE 128",
-                               "u_int8_t  bc_fi_switchpanel_array[SWITCHPANEL_SIZE];",
-                               "u_int8_t  bc_fi_switchpanel_default = 1;"],
-               extra_global_syms = ["bc_fi_switchpanel_array",
-                                    "bc_fi_switchpanel_default"],
-               trigger_struct = "
-typedef struct {
-    char *i_name; /* Must be present */
-    int index;
-}",
-             trigger_init = "
-    int i;
-
-    for (i = 0; i < SWITCHPANEL_SIZE; i++) {
-        bc_fi_switchpanel_array[i] = bc_fi_switchpanel_default;
-    }
-",
-             trigger_new_instance_args = "int index",
-             trigger_new_instance_body = "
-    a->index = index;
-",
-             trigger_body = "
-    res = bc_fi_switchpanel_array[a->index];
-"
-             },
-          #fi{
-               name = "timer",
-               type = trigger,
-               c_headers = ["<time.h>"],
-               c_decl_extra = ["u_int32_t bc_fi_timer_start_time = 0;"],
-               extra_global_syms = ["bc_fi_timer_start_time"],
-               trigger_struct = "
-typedef struct {
-    char *i_name; /* Must be present */
-    time_t delay;
-}",
-               trigger_init = "
-    bc_fi_timer_start_time = time(NULL);
-",
-               trigger_new_instance_args = "time_t delay",
-               trigger_new_instance_body = "
-    a->delay = delay;
-",
-               trigger_body = "
-    if (time(NULL) - (time_t)bc_fi_timer_start_time > a->delay) {
-        res = 1;
-    } else {
-        res = 0;
-    }
-"
-             },
-          #fi{
-               name = "unlink",
-               type = intercept,
-               intercept_args = "const char *path",
-               c_headers = ["<unistd.h>"],
-               intercept_errno = "EREMOTE",
-               intercept_return_type = "int",
-               intercept_return_value = "-1",
-               intercept_triggers = [{"switchpanel", "switchpanel_42", "42"},
-                                     {"random", "random_50", "50"}]
-             }
-          ]).
+%% make/1 scaffolding removed, see git history
 
 make(OutFile, C) when is_list(OutFile) ->
     {ok, OUT} = file:open(OutFile, [write]),
@@ -144,8 +43,6 @@ make(OutFile, C) when is_list(OutFile) ->
     end;
 make(OUT, C) ->
     put(output_file, OUT),
-    I_Hdrs = [{X#fi.name, X#fi.c_headers} || X <- C],
-    _I_CDecl_Extra = [{X#fi.name, X#fi.c_decl_extra} || X <- C],
     make_push(global_syms),
 
     px(?LICENSE),
@@ -154,7 +51,11 @@ make(OUT, C) ->
         Hdr <- ["<stdio.h>", "<stdlib.h>", "<stdarg.h>", "<dlfcn.h>",
                 "<sys/types.h>", "<sys/errno.h>"]],
 
-    [px("#include ~s\n", [Hdr]) || {_I, HdrList} <- I_Hdrs, Hdr <- HdrList],
+    I_Hdrs = [{X#fi.name, X#fi.c_headers} || X <- C],
+    [begin
+         p("/* c_headers                              ((~s)) */", [Name]),
+         p("#include ~s", [Hdr])
+     end || {Name, HdrList} <- I_Hdrs, Hdr <- HdrList],
     p(""),
 
     [begin
@@ -173,7 +74,10 @@ make(OUT, C) ->
          V3 = flat_format("bc_fi_~s_verbose", [Name]),
          p("u_int8_t  ~s = ~w;", [V3, bool_to_int(Verbose)]),
          push(global_syms, V3),
-         [p(XTra) || XTra <- CDX],
+         [begin
+              p("/* c_decl_extra                         ((~s)) */", [Name]),
+              p(XTra)
+          end || XTra <- CDX],
          [push(global_syms, Sym) || Sym <- XtraGlobalSyms],
          p("")
      end || #fi{type=trigger, name=Name, enabled=Enabled,
@@ -199,6 +103,7 @@ make(OUT, C) ->
                 intercept_return_value=FReturnVal} <- C],
 
     [begin
+         p("/* trigger_struct                               ((~s)) */", [Name]),
          p("~s bc_fi_~s_t;", [TS, Name]),
          p("")
      end || #fi{type=trigger, name=Name, trigger_struct=TS} <- C],
@@ -206,6 +111,7 @@ make(OUT, C) ->
     [begin
          p("static void init_~s()", [Name]),
          p("{"),
+         p("    /* trigger_init                             ((~s)) */", [Name]),
          p(Init),
          p("}"),
          p("")
@@ -229,6 +135,7 @@ make(OUT, C) ->
          p("    init_all_once();"),
          p("    a->i_name = malloc(strlen(i_name) + 1);"),
          p("    strcpy(a->i_name, i_name);"),
+         p("    /* trigger_instance_body                    ((~s)) */", [Name]),
          px(Body),
          p("}"),
          p("")
@@ -247,7 +154,9 @@ make(OUT, C) ->
          p("        }"),
          p("        return res;"),
          p("    }"),
+         p("    /* trigger_body begin                       ((~s)) */", [Name]),
          p("~s", [Body]),
+         p("    /* trigger_body end                         ((~s)) */", [Name]),
          p("    if (bc_fi_verbose || bc_fi_~s_verbose) {", [Name]),
          p("        fprintf(stderr, \"trigger_~s: name=%s intercept=%s trigger=%d\\r\\n\",", [Name]),
          p("                a->i_name, intercept_name, res);"),
@@ -258,6 +167,7 @@ make(OUT, C) ->
      end || #fi{type=trigger, name=Name, trigger_body=Body} <- C],
 
     [begin
+         push(global_syms, Name),
          p("int ~s(~s)", [Name, Args]),
          p("{"),
          [p("    static bc_fi_~s_t *a_~s = NULL;", [TType, TInstance]) ||
@@ -295,13 +205,15 @@ make(OUT, C) ->
          p(""),
          p("    if (trigger) {"),
          if ReturnGeneric == undefined ->
+                 p("        /* boilerplate for fake errno & fake return ((~s)) */", [Name]),
                  p("        errno = bc_fi_~s_fake_errno;", [Name]),
                  p("        res = bc_fi_~s_fake_return;", [Name]);
             true ->
+                 p("        /* intercept_return_generic     ((~s)) */", [Name]),
                  px(ReturnGeneric)
          end,
          p("    } else {"),
-         p("        res = (*real)(path);"),
+         p("        res = (*real)(~s);", [ArgsCall]),
          p("    }"),
          p("    if (bc_fi_verbose || bc_fi_~s_verbose) {", [Name]),
          p("        fprintf(stderr, \"intercept: %s: return=%d\\r\\n\","),
@@ -311,7 +223,8 @@ make(OUT, C) ->
          p("}"),
          ok
      end || #fi{type=intercept, name=Name,
-                intercept_args=Args, intercept_return_type=FReturnT,
+                intercept_args=Args, intercept_args_call=ArgsCall,
+                intercept_return_type=FReturnT,
                 intercept_triggers=Triggers,
                 intercept_return_generic=ReturnGeneric} <- C],
     p(""),
@@ -333,7 +246,6 @@ px(Fmt) ->
     px(Fmt, []).
 
 px(Fmt, Args) ->
-    io:format(Fmt, Args),
     ok = io:format(get(output_file), Fmt, Args).
 
 p(Fmt) ->

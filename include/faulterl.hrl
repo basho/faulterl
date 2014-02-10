@@ -35,6 +35,7 @@
           trigger_body = "" :: string(),
           verbose = false :: boolean(),
           intercept_args = "" :: string(),
+          intercept_args_call = "" :: string(),
           intercept_errno :: 'undefined' | integer(),
           intercept_return_type :: 'undefined' | string(),
           intercept_return_value :: 'undefined' | string(),

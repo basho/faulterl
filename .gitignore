@@ -1,3 +1,4 @@
+c_src/*.o
 ebin/*.beam
 ebin/*.app
 priv/faulterl.so

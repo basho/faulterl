@@ -14,6 +14,7 @@ all: deps compile
 
 compile:
 	$(REBAR_BIN) compile
+	erlc -o ebin -I include scenario/*erl
 
 deps:
 	$(REBAR_BIN) get-deps
