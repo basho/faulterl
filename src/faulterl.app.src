@@ -1,0 +1,14 @@
+{application, faulterl,
+ [
+  {description, ""},
+  {vsn, "0.1"},
+  {modules, []},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib
+                 ]},
+  %{mod, {bitcask_app, []}},
+  {env, [
+        ]}
+ ]}.
