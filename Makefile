@@ -12,24 +12,22 @@ endif
 
 all: compile
 
-compile: ebin/make_intercept_c.escript \
-         ebin/example_environment.sh
+# rebar_post_compile is typically only used by Rebar's post_hooks.
+rebar_post_compile: compile_scripts compile_scenarios
+
+compile:
 	$(REBAR_BIN) compile
-	erlc -o ebin -I include scenario/*erl
 
 clean:
 	$(REBAR_BIN) clean
 	rm -f ebin/*.escript
 	rm -f ebin/*.sh
 
-test: compile eunit
+compile_scripts: ebin/make_intercept_c.escript \
+                 ebin/example_environment.sh
 
-eunit:
-	$(REBAR_BIN) -v skip_deps=true eunit
-
-NOW	= $(shell date +%s)
-COUNTER = $(PWD)/$(NOW).current_counterexample.eqc
-EQCINFO = $(PWD)/$(NOW).eqc-info
+compile_scenarios:
+	erlc -o ebin -I include scenario/*erl
 
 ebin/make_intercept_c.escript: priv/scripts/make_intercept_c.escript
 	echo "#!/usr/bin/env escript" > $@
@@ -39,3 +37,8 @@ ebin/make_intercept_c.escript: priv/scripts/make_intercept_c.escript
 
 ebin/example_environment.sh: priv/scripts/example_environment.sh
 	cp -p $< $@
+
+test: compile eunit
+
+eunit:
+	$(REBAR_BIN) -v skip_deps=true eunit
