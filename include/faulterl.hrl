@@ -32,6 +32,7 @@
           trigger_init = "" :: string(),
           trigger_new_instance_args :: string(),
           trigger_new_instance_body = "" :: string(),
+          trigger_with_intercepts_args :: 'undefined' | string(),
           trigger_body = "" :: string(),
           verbose = false :: boolean(),
           intercept_args = "" :: string(),

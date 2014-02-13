@@ -42,6 +42,9 @@ make(OutFile, C) when is_list(OutFile) ->
         file:close(OUT)
     end;
 make(OUT, C) ->
+    make2(OUT, convert_intercept_triggerlists(C)).
+
+make2(OUT, C) ->
     put(output_file, OUT),
     make_push(global_syms),
 
@@ -146,8 +149,22 @@ make(OUT, C) ->
      end || #fi{type=trigger, name=Name, trigger_new_instance_args=Args,
                 trigger_new_instance_body=Body} <- C],
 
+    InterceptArgsList =
+        [{Name, Args} || #fi{type=intercept, name=Name,
+                             intercept_args=Args} <- C],
+    InterceptArgsCallList =
+        [{Name, ArgsCall} || #fi{type=intercept, name=Name,
+                                 intercept_args_call=ArgsCall} <- C,
+                             ArgsCall /= undefined],
+io:format(user, "InterceptArgsCallList = ~p\n", [InterceptArgsCallList]),
     [begin
-         p("int trigger_~s(bc_fi_~s_t *a, char *intercept_name)", [Name, Name]),
+         if WithInterceptsArgs == undefined ->
+                 p("int trigger_~s(bc_fi_~s_t *a, char *intercept_name)", [Name, Name]);
+            true ->
+                 InterceptsArgs = proplists:get_value(WithInterceptsArgs,
+                                                      InterceptArgsList),
+                 p("int trigger_~s(bc_fi_~s_t *a, char *intercept_name, ~s)", [Name, Name, InterceptsArgs])
+         end,
          p("{"),
          p("    int res;"),
          p(""),
@@ -168,7 +185,9 @@ make(OUT, C) ->
          p("    return res;"),
          p("}"),
          p("")
-     end || #fi{type=trigger, name=Name, trigger_body=Body} <- C],
+     end || #fi{type=trigger, name=Name,
+                trigger_body=Body,
+                trigger_with_intercepts_args=WithInterceptsArgs} <- C],
 
     [begin
          push(global_syms, Name),
@@ -197,10 +216,20 @@ make(OUT, C) ->
               p("        }")
           end || {TType, TInstance, TArgs} <- Triggers],
 
-         p("        trigger=1;"),
+         p("        trigger = 1;"),
          [begin
+              [TriggerWithInterceptArgs] =
+                  [X_TWIA || #fi{type=trigger, name=X_TType,
+                               trigger_with_intercepts_args=X_TWIA} <- C,
+                             X_TType == TType],
               p("        if (trigger) {"),
-              p("            trigger = trigger_~s(a_~s, real_name);", [TType, TInstance]),
+              case proplists:get_value(Name, InterceptArgsCallList) of
+                  TArgsCall when TArgsCall /= undefined andalso
+                          TriggerWithInterceptArgs /= undefined ->
+                      p("            trigger = trigger_~s(a_~s, real_name, ~s);", [TType, TInstance, TArgsCall]);
+                  _ ->
+                      p("            trigger = trigger_~s(a_~s, real_name);", [TType, TInstance])
+              end,
               p("        }")
           end || {TType, TInstance, _TArgs} <- Triggers],
          p("    } else {"),
@@ -225,13 +254,12 @@ make(OUT, C) ->
          p("    }"),
          p("    return res;"),
          p("}"),
-         ok
+         p("")
      end || #fi{type=intercept, name=Name,
                 intercept_args=Args, intercept_args_call=ArgsCall,
                 intercept_return_type=FReturnT,
                 intercept_triggers=Triggers,
                 intercept_return_generic=ReturnGeneric} <- C],
-    p(""),
 
     [p("/*--export-- ~s */", [Sym]) || Sym <- lists:reverse(get(global_syms))],
     ok.
@@ -266,3 +294,19 @@ push(P, Item) ->
 
 flat_format(Fmt, Args) ->
     lists:flatten(io_lib:format(Fmt, Args)).
+
+convert_intercept_triggerlists(C) ->
+    put(hack, 1),
+    Fun2to3 = fun({_TType, _TInstance, _TArgs}=X) ->
+                      X;
+                 ({TType, TArgs}) ->
+                      X = get(hack),
+                      put(hack, X+1),
+                      TInstance = flat_format("instance_~s_~w", [TType, X]),
+                      {TType, TInstance, TArgs}
+              end,
+    lists:map(fun(#fi{type=trigger}=FI) ->
+                      FI;
+                 (#fi{type=intercept, intercept_triggers=Triggers}=FI) ->
+                      FI#fi{intercept_triggers = lists:map(Fun2to3, Triggers)}
+              end, C).
