@@ -10,10 +10,16 @@ platform() ->
     end.
 
 main([InConfigName, OutCBase]) ->
+    main([InConfigName, OutCBase, "true"]);
+main([InConfigName, OutCBase, PostProcessCCmd]) ->
+    io:format(user, "PostProcessCCmd = '~s'\n", [PostProcessCCmd]),
     InConfigA = list_to_atom(InConfigName),
     Config = InConfigA:config(),
     OutCPath = OutCBase ++ ".c",
     ok = faulterl:make(OutCPath, Config),
+
+    os:cmd(PostProcessCCmd ++ " " ++ OutCPath),
+
     OutExport = OutCBase ++ ".export",
     Cmd1 = "egrep '^/\\*--export-- ' " ++ OutCPath ++ " | awk '{printf(\"_%s\\n\", $2)}' > " ++ OutExport,
     io:format("~s\n", [Cmd1]),
