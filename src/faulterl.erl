@@ -186,7 +186,7 @@ io:format(user, "InterceptArgsCallList = ~p\n", [InterceptArgsCallList]),
 
     [begin
          push(global_syms, Name),
-         p("int ~s(~s)", [Name, Args]),
+         p("~s ~s(~s)", [FReturnT, Name, Args]),
          p("{"),
          [p("    static bc_fi_~s_t *a_~s = NULL;", [TType, TInstance]) ||
              {TType, TInstance, _Args} <- Triggers],
@@ -203,7 +203,7 @@ io:format(user, "InterceptArgsCallList = ~p\n", [InterceptArgsCallList]),
          end,
          p(""),
          p("    if (real == NULL) {"),
-         p("        if ((real = (int (*)()) dlsym(RTLD_NEXT, real_name)) == NULL) {"),
+         p("        if ((real = (~s (*)()) dlsym(RTLD_NEXT, real_name)) == NULL) {", [FReturnT]),
          p("            fprintf(stderr, \"Fatal error: %s\\r\\n\", dlerror());"),
          p("            abort();"),
          p("        }"),
