@@ -194,6 +194,13 @@ io:format(user, "InterceptArgsCallList = ~p\n", [InterceptArgsCallList]),
          p("    static ~s (*real)() = NULL;", [FReturnT]),
          p("    int trigger;"),
          p("    ~s res;", [FReturnT]),
+         if BodySetup /= undefined ->
+                 p("    /* intercept_body_setup begin       ((~s)) */", [Name]),
+                 p(BodySetup),
+                 p("    /* intercept_body_setup end         ((~s)) */", [Name]);
+            true ->
+                 ok
+         end,
          p(""),
          p("    if (real == NULL) {"),
          p("        if ((real = (int (*)()) dlsym(RTLD_NEXT, real_name)) == NULL) {"),
@@ -252,6 +259,7 @@ io:format(user, "InterceptArgsCallList = ~p\n", [InterceptArgsCallList]),
          p("")
      end || #fi{type=intercept, name=Name,
                 intercept_args=Args, intercept_args_call=ArgsCall,
+                intercept_body_setup=BodySetup,
                 intercept_return_type=FReturnT,
                 intercept_triggers=Triggers,
                 intercept_return_generic=ReturnGeneric} <- C],
