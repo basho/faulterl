@@ -65,7 +65,7 @@ make2(OUT, C) ->
      end || {Name, HdrList} <- I_Hdrs, Hdr <- HdrList],
     p(""),
 
-    p("u_int8_t  bc_fi_enabled = 1;"),
+    p("u_int8_t  bc_fi_enabled = 0;"),
     push(global_syms, "bc_fi_enabled"),
     p("u_int8_t  bc_fi_verbose = 0;"),
     push(global_syms, "bc_fi_verbose"),
