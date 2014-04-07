@@ -27,7 +27,7 @@ compile_scripts: ebin/make_intercept_c.escript \
                  ebin/example_environment.sh
 
 compile_scenarios:
-	erlc -o ebin -I include scenario/*erl
+	erlc +debug_info -o ebin -I include scenario/*erl
 
 ebin/make_intercept_c.escript: priv/scripts/make_intercept_c.escript
 	echo "#!/usr/bin/env escript" > $@
