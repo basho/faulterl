@@ -23,6 +23,7 @@
 
 -export([init/0,
          peek/5,
+         poke/3,
          poke/4]).
 
 -on_load(init/0).
@@ -56,6 +57,9 @@ peek(Key, Index, Size, false, DerefP) ->
 
 peek_int(_Key, _Index, _Size, _StringPInt, _DerefPInt) ->
     erlang:nif_error({error, not_loaded}).
+
+poke(Key, Val, Size) ->
+    poke(Key, 0, <<Val:Size/native>>, false).
 
 poke(Key, Index, Val, DerefP) when is_list(Val); is_binary(Val) ->
     poke_int(Key, Index, Val, bool_to_int(DerefP)).
