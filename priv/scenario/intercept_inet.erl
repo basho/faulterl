@@ -53,14 +53,22 @@ typedef struct {
 ",
 
     WritevReturnGeneric = "
-#define WRITEV_BYTE_LIMIT 64
+#define WRITEV_BYTE_LIMIT (64*1024)
         struct iovec fake[1];
+        int byte_max;
         int i;
     
         fake[0].iov_base = iov[0].iov_base;
-        fake[0].iov_len = MIN(iov[0].iov_len, 16);
+        if (opt_bpslimit > 131072) {
+             byte_max = WRITEV_BYTE_LIMIT;
+        } else if (opt_bpslimit > 32768) {
+             byte_max = 2048;
+        } else {
+            byte_max = 64;
+        }
+        fake[0].iov_len = MIN(iov[0].iov_len, byte_max);
 
-/* fprintf(stderr, \"len=%zu,\", fake[0].iov_len); */
+        /* fprintf(stderr, \"len=%zu,\", fake[0].iov_len); */
         nb_limit_io(fake[0].iov_len);
         res = (*real)(fd, fake, 1);
 ",
@@ -279,6 +287,7 @@ long long nb_getusec(void)
 
 void nb_log(char *fmt, ...)
 {
+#ifdef COMMENT
 	va_list ap;
 
 	if (0)
@@ -286,6 +295,7 @@ void nb_log(char *fmt, ...)
 	va_start(ap, fmt);
 	vfprintf(stderr, fmt, ap);
 	va_end(ap);
+#endif /* COMMENT */
 }
 
 /* End netbrake code */

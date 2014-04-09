@@ -238,6 +238,7 @@ io:format(user, "InterceptArgsCallList = ~p\n", [InterceptArgsCallList]),
          p("        trigger = 0;"),
          p("    }"),
          p(""),
+         %% p("    if (trigger) fprintf(stderr, \"%s,\", \"~s\"); else fprintf(stderr, \"%s,\", \"not-~s\"); /*QQQ DEBUG ONLY*/", [Name, Name]),
          p("    if (trigger) {"),
          if ReturnGeneric == undefined ->
                  p("        /* boilerplate for fake errno & fake return ((~s)) */", [Name]),
@@ -313,3 +314,28 @@ convert_intercept_triggerlists(C) ->
                  (#fi{type=intercept, intercept_triggers=Triggers}=FI) ->
                       FI#fi{intercept_triggers = lists:map(Fun2to3, Triggers)}
               end, C).
+
+%% e.g. for an "iperf -s" server listening on localhost port 5001:
+%%
+%% faulterl:stream("localhost", 5001, 4000*1000*1000, 512*1024, 5000).
+%% -> 0.0- 5.6 sec  2.44 GBytes  3.74 Gbits/sec
+%%
+%% faulterl:stream("localhost", 5001, 400*1000*1000, 512*1024, 500).
+%% -> 0.0- 5.1 sec   250 MBytes   413 Mbits/sec
+%%
+%% faulterl:stream("localhost", 5001, 4*1000*1000, 512*1024, 5).
+%% -> 0.0- 5.1 sec  2.50 MBytes  4.10 Mbits/sec
+%%
+%% faulterl:stream("localhost", 5001, 250*1000, 32*1024, 16).
+%% -> 0.0- 5.2 sec   160 KBytes   250 Kbits/sec
+%%
+%% faulterl:stream("localhost", 5001, 10*1000, 3*1024, 5).
+%% -> 0.0-12.2 sec  15.0 KBytes  10.0 Kbits/sec
+
+stream(Host, Port, BitsPerSec, PayloadBytes, NumPayloads) ->
+    {ok, Sock} = gen_tcp:connect(Host, Port, [{active,false}]),
+    faulterl_nif:poke("bc_fi_enabled", 1, 8),
+    faulterl_nif:poke("opt_bpslimit", BitsPerSec div 8, 32),
+    Payload = <<0:(PayloadBytes*8)>>,
+    [ok = gen_tcp:send(Sock, Payload) || _ <- lists:seq(1,NumPayloads)],
+    gen_tcp:close(Sock).
