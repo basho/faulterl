@@ -44,3 +44,5 @@
           intercept_return_generic :: 'undefined' | string(),
           intercept_triggers = [] :: [string()]
          }).
+
+-define(FLAT(Fmt, Args), lists:flatten(io_lib:format(Fmt, Args))).

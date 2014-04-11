@@ -21,17 +21,21 @@
 %% -------------------------------------------------------------------
 
 -module(trigger_switchpanel).
--export([config/0]).
+-compile(export_all).
 
 -include("faulterl.hrl").
 
 config() ->
+    Size = size(),
     #fi{
         name = "switchpanel",
         type = trigger,
-        c_decl_extra = ["#define SWITCHPANEL_SIZE 128",
+        c_decl_extra = ["#ifndef TRIGGER_SWITCHPANEL_GLOBAL",
+                        "#define TRIGGER_SWITCHPANEL_GLOBAL",
+                        ?FLAT("#define SWITCHPANEL_SIZE ~w", [Size]),
                         "u_int8_t  bc_fi_switchpanel_array[SWITCHPANEL_SIZE];",
-                        "u_int8_t  bc_fi_switchpanel_default = 1;"],
+                        "u_int8_t  bc_fi_switchpanel_default = 1;",
+                        "#endif /* TRIGGER_SWITCHPANEL_GLOBAL */"],
         extra_global_syms = ["bc_fi_switchpanel_array",
                              "bc_fi_switchpanel_default"],
         trigger_struct = "
@@ -54,4 +58,14 @@ typedef struct {
     res = bc_fi_switchpanel_array[a->index];
 "
     }.
+
+size() ->
+    (64*1024).
+
+set(Val) ->
+    [ok = faulterl_nif:poke("bc_fi_switchpanel_array", Idx, <<Val:8>>, false) ||
+        Idx <- lists:seq(0, size() - 1)].
+
+set(Idx, Val) ->
+    faulterl_nif:poke("bc_fi_switchpanel_array", Idx, <<Val:8>>, false).
 

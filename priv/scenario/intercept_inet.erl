@@ -26,7 +26,17 @@
 %% faulterl_nif:poke("opt_bpslimit", 30, 32).
 %% timer:tc(fun() -> [net_adm:ping('bar@sbb3') || _ <- lists:seq(1,5)] end).
 %%
-%% ... which (in a single experiment) takes about 49 seconds.  :-)
+%% ... which (in a single experiment) takes about 23 seconds.  :-)
+
+%% Continuing with the example: disable throttling for the disterl TCP
+%% connection to 'bar@sbb3':
+%%
+%% trigger_switchpanel:set(faulterl_util:disterl_fd_num('bar@sbb3'), 0).
+%% timer:tc(fun() -> [net_adm:ping('bar@sbb3') || _ <- lists:seq(1,5)] end).
+%% -> less than 1 msec.
+%%
+%% Then turn throttling back on for that node:
+%% trigger_switchpanel:set(faulterl_util:disterl_fd_num('bar@sbb3'), 1).
 
 -module(intercept_inet).
 -export([config/0]).
@@ -41,7 +51,7 @@ typedef struct {
 }",
     IntArgC_TNewInstanceArgs = "char *not_used",
     IntArgC_TNewInstanceBody = "",
-    IntArgC_TBody = "
+    IntArgC_TBody_throttle = "
     int o_value;
     socklen_t o_size = sizeof(o_value);
 
@@ -50,6 +60,14 @@ typedef struct {
     } else {
         return 0;
     }
+",
+
+    IntArgC_TBody_switchpanel = "
+       if (fd >= SWITCHPANEL_SIZE || fd < 0) {
+           res = 0;
+       } else {
+           res = bc_fi_switchpanel_array[fd];
+       }
 ",
 
     WritevReturnGeneric = "
@@ -74,13 +92,20 @@ typedef struct {
 ",
 
     [trigger_random:config()] ++
-    [
-     trigger_args_of_intercept:config(
+    [trigger_switchpanel:config()] ++
+    [trigger_args_of_intercept:config(
          IntArgC_CHeaders, [], [],
          true, true, false,
          IntArgC_TStruct, "", IntArgC_TNewInstanceArgs, IntArgC_TNewInstanceBody,
-         InterceptName, IntArgC_TBody,
-         InterceptName, "fd") || InterceptName <- ["writev"]
+         InterceptName, IntArgC_TBody_throttle,
+         InterceptName, "fd_throttle") || InterceptName <- ["writev"]
+    ] ++ 
+    [trigger_args_of_intercept:config(
+         [], [], [],
+         true, true, false,
+         IntArgC_TStruct, "", IntArgC_TNewInstanceArgs, IntArgC_TNewInstanceBody,
+         InterceptName, IntArgC_TBody_switchpanel,
+         InterceptName, "fd_switchpanel") || InterceptName <- ["writev"]
     ] ++ 
     [
      #fi{
@@ -117,7 +142,8 @@ typedef struct {
          intercept_return_value = "-1",
          intercept_return_generic = WritevReturnGeneric,
          intercept_triggers = [{"random", "random_always", "100"},
-                               {"i_arg_writev_fd", "\"unusED\""}]
+                               {"i_arg_writev_fd_switchpanel", "\"unusED1\""},
+                               {"i_arg_writev_fd_throttle", "\"unusED2\""}]
      }
     ].
 

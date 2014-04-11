@@ -222,7 +222,7 @@ io:format(user, "InterceptArgsCallList = ~p\n", [InterceptArgsCallList]),
          [begin
               [TriggerWithInterceptArgs] =
                   [X_TWIA || #fi{type=trigger, name=X_TType,
-                               trigger_with_intercepts_args=X_TWIA} <- C,
+                                 trigger_with_intercepts_args=X_TWIA} <- C,
                              X_TType == TType],
               p("        if (trigger) {"),
               case proplists:get_value(Name, InterceptArgsCallList) of
