@@ -22,7 +22,15 @@
 -module(faulterl_nif).
 
 -export([init/0,
+         peek8/1,
+         peek16/1,
+         peek32/1,
+         peek64/1,
          peek/5,
+         poke8/2,
+         poke16/2,
+         poke32/2,
+         poke64/2,
          poke/3,
          poke/4]).
 
@@ -50,6 +58,38 @@ init() ->
     end,
     erlang:load_nif(SoName, 0).
 
+peek8(Key) ->
+    case peek(Key, 0, 8, false, false) of
+        {ok, <<Val:8>>} ->
+            Val;
+        Else ->
+            Else
+    end.
+
+peek16(Key) ->
+    case peek(Key, 0, 16, false, false) of
+        {ok, <<Val:16>>} ->
+            Val;
+        Else ->
+            Else
+    end.
+
+peek32(Key) ->
+    case peek(Key, 0, 32, false, false) of
+        {ok, <<Val:32>>} ->
+            {ok, Val};
+        Else ->
+            Else
+    end.
+
+peek64(Key) ->
+    case peek(Key, 0, 64, false, false) of
+        {ok, <<Val:64>>} ->
+            Val;
+        Else ->
+            Else
+    end.
+
 peek(Key, Index, 1=Size, true=_StringP, DerefP) ->
     peek_int(Key, Index, Size, 1, bool_to_int(DerefP));
 peek(Key, Index, Size, false, DerefP) ->
@@ -57,6 +97,18 @@ peek(Key, Index, Size, false, DerefP) ->
 
 peek_int(_Key, _Index, _Size, _StringPInt, _DerefPInt) ->
     erlang:nif_error({error, not_loaded}).
+
+poke8(Key, Val) ->
+    poke(Key, Val, 8).
+
+poke16(Key, Val) ->
+    poke(Key, Val, 16).
+
+poke32(Key, Val) ->
+    poke(Key, Val, 32).
+
+poke64(Key, Val) ->
+    poke(Key, Val, 64).
 
 poke(Key, Val, Size) ->
     poke(Key, 0, <<Val:Size/native>>, false).
