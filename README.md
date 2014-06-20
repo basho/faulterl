@@ -28,7 +28,7 @@ program.
 
     % touch /tmp/sample-file
     
-    % (cd ./deps/lfi ; ./libfi ../../priv/scenario/unlink.xml)
+    % (cd ./deps/lfi ; ./libfi -t '/bin/rm /tmp/sample-file' ../../priv/scenario/unlink.xml)
     rm: /tmp/sample-file: Inappropriate ioctl for device
     Process exited normally. Exit status: 1
     
@@ -48,24 +48,27 @@ over the behavior of the triggers.
 
 The `peek` and `poke` NIFs in this library allow Erlang to read and
 modify global-scope symbols.  Here is an example.  We build the
-`trigger_unlink` scenario and start Erlang using the `yo` intercept
-library.
+`unlink.xml` scenario and run the Erlang VM using it.
 
     % make
-    % ./ebin/make_intercept_c.escript intercept_unlink yo
-    % env `ebin/example_environment.sh $PWD/yo` erl -pz ebin
-
-    1> faulterl_nif:peek8("g_libfi_enabled").
-    1
     
-    2> faulterl_nif:peek8("symbol_does_not_exist").
+    % (cd ./deps/lfi ; ./libfi ../../priv/scenario/unlink.xml)
+    
+    % touch /tmp/sample-file
+    
+    % env `ebin/example_environment.sh $PWD/deps/lfi` erl -pz ebin
+
+    1> faulterl_nif:peek8("symbol_does_not_exist").
     not_found
+    
+    2> faulterl_nif:peek8("g_libfi_enabled").
+    1
 
 The value of the `g_libfi_enabled` global symbol, which is an 8 bit
 variable (C `u_int8_t` type), is `1`.  Let's check to see that our
 intercept library is indeed still working.
 
-    3> file:delete("foofoo").
+    3> file:delete("/tmp/sample-file").
     {error,enotty}
 
 Yes, it's working.  Now we set `g_libfi_enabled` to zero, which will
@@ -80,16 +83,23 @@ disable all intercepts in our library.
 Good, `g_libfi_enabled` has changed value from `1` -> `0`.  Let's see if
 the intercept is really disabled.
 
-    9> file:delete("foofoo").
+    9> file:delete("/tmp/sample-file").
     ok
     
-    10> file:delete("foofoo").
+    10> file:delete("/tmp/sample-file").
     {error,enoent}
 
 Hooray!
 
+## NIF documentation
+
 The NIFs are not yet well-documented.  Please see the EUnit test suite
 at the end of `src/faulterl_nifs.erl` for definitive documentation"".
+
+## libfi documentation
+
+Please see https://github.com/dslab-epfl/lfi/wiki for documentation on
+the libfi framework.
 
 ## License
 
@@ -111,14 +121,9 @@ at the end of `src/faulterl_nifs.erl` for definitive documentation"".
 
 ## Inspiration
 
-This library was inspired by libfi,
-https://github.com/dslab-epfl/lfi.  That library has not been actively
-maintained; stability is good, but it no longer works correctly with
-OS X 10.8.5.  This library uses Erlang-style syntax and a
-template-style configuration instead of the original's XML syntax.
-
-The template style is cumbersome, but it avoids the need to play games
-with the stack frame and thus is much more portable than EPFL's
-version.
-
+This library was inspired by libfi, https://github.com/dslab-epfl/lfi.
+Many thanks to Paul Marinescu for fixing OS X bugs that were
+introduced by changes in Apple's compiler toolchain, and many thanks
+to his entire group at the Dependable Systems Lab at Ecole
+polytechnique fédérale de Lausanne for creating libfi.
 
