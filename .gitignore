@@ -1,4 +1,5 @@
 .eunit
+deps
 c_src/*.o
 ebin/*.app
 ebin/*.beam

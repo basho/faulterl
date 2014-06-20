@@ -19,38 +19,23 @@ First, make everything.
 
     % make
 
-Then, make the intercept shared library.  We'll give it a stupid name
-with the 2nd argument: `yo`.  The first argument is the basename
-(i.e. without the `.erl` extension) of the scenario that we want to
-use.  The fault injection scenario files are found in the `scenario`
-directory.
+Second, compile a fault injection XML specification file.
 
-    % ./ebin/make_intercept_c.escript intercept_unlink yo
-    egrep '^/\*--export-- ' yo.c | awk '{printf("_%s\n", $2)}' > yo.export
-    gcc -g -o yo.dylib -O0 -shared -Xlinker -exported_symbols_list -Xlinker yo.export yo.c
-    -rw-rw-r--  1 fritchie  staff   4728 Feb 10 16:57 yo.c
-    -rwxrwxr-x  1 fritchie  staff  11020 Feb 10 16:57 yo.dylib
-    drwxrwxr-x  3 fritchie  staff    102 Feb 10 16:57 yo.dylib.dSYM
-    -rw-rw-r--  1 fritchie  staff    204 Feb 10 16:57 yo.export
+In this example, we will experiment by injecting faults into the
+`unlink(2)` and `unlinkat(2)` system calls.  We tell the `libfi`
+program to intercept those system calls when running the `/bin/rm`
+program.
 
-Now, let's use it and see what happens.  Please note that many OSes
-will refuse to use a pre-loaded shared library unless it has an
-absolute path.  Please note that all examples below of the
-`ebin/example_environment.sh` script use a `$PWD/` prefix to use an
-absolute path.
-
-    % touch foofoo
+    % touch /tmp/sample-file
     
-    % env `ebin/example_environment.sh $PWD/yo` /bin/rm foofoo
-    rm: foofoo: Too many levels of remote in path
+    % (cd ./deps/lfi ; ./libfi ../../priv/scenario/unlink.xml)
+    rm: /tmp/sample-file: Inappropriate ioctl for device
+    Process exited normally. Exit status: 1
     
-    % env `ebin/example_environment.sh $PWD/yo` /bin/rm foofoo
-    rm: foofoo: Too many levels of remote in path
-    
-    % ls -l foofoo
-    -rw-rw-r--  1 fritchie  staff  0 Feb 10 16:50 foofoo
+    % ls -l /tmp/sample-file
+    -rw-rw-r--  1 fritchie  staff  0 Feb 10 16:50 /tmp/sample-file
 
-Yay, we cannot delete the file.  The intercept library is definitely
+Hooray, we cannot delete the file.  The intercept library is definitely
 lying to us.
 
 ## The NIFs: peek and poke
@@ -70,40 +55,35 @@ library.
     % ./ebin/make_intercept_c.escript intercept_unlink yo
     % env `ebin/example_environment.sh $PWD/yo` erl -pz ebin
 
-    2> faulterl_nif:peek("bc_fi_enabled", 0, 8, false, false).
-    {ok,<<1>>}
+    1> faulterl_nif:peek8("g_libfi_enabled").
+    1
+    
+    2> faulterl_nif:peek8("symbol_does_not_exist").
+    not_found
 
-The value of the `bc_fi_enabled` global symbol, which is an 8 bit
+The value of the `g_libfi_enabled` global symbol, which is an 8 bit
 variable (C `u_int8_t` type), is `1`.  Let's check to see that our
 intercept library is indeed still working.
 
     3> file:delete("foofoo").
-    {error,eremote}
+    {error,enotty}
 
-Yes, it's working.  Now we set `bc_fi_enabled` to zero, which will
+Yes, it's working.  Now we set `g_libfi_enabled` to zero, which will
 disable all intercepts in our library.
 
-    4> faulterl_nif:peek("bc_fi_enabled", 0, 8, false, false).
-    {ok,<<1>>}
-
-    5> "Alright, we'll turn it off".
-    "Alright, we'll turn it off"
-
-    7> faulterl_nif:poke("bc_fi_enabled", 0, <<0:8/native>>, false).
+    7> faulterl_nif:poke8("g_libfi_enabled", 0).
     ok
+    
+    8> faulterl_nif:peek8("g_libfi_enabled").
+    0
 
-    8> faulterl_nif:peek("bc_fi_enabled", 0, 8, false, false).
-    {ok,<<0>>}
-
-Good, `bc_fi_enabled` has changed value from `1` -> `0`.  Let's see if
+Good, `g_libfi_enabled` has changed value from `1` -> `0`.  Let's see if
 the intercept is really disabled.
 
     9> file:delete("foofoo").
-    real = 0x0x7f47021a7960
     ok
-
+    
     10> file:delete("foofoo").
-    real = 0x0x7f47021a7960
     {error,enoent}
 
 Hooray!
