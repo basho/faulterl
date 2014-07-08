@@ -10,6 +10,16 @@
 * OS X or Linux.  I fully intend to support Solaris/SmartOS/OmniOS
   and FreeBSD, but I haven't tested it yet.  I have tested OS X 10.8.5
   and Linux 3.2 on a Debian 7.x/"wheezy/sid" distribution.
+    * A known FreeBSD limitation is that several of the lfi C++
+      trigger files use `#include <execinfo.h>`, which does not exist
+      on my FreeBSD 9.x test box.
+    * If FreeBSD support is something that you need immediately, then
+      try using the `erlang-hack-code-generator` branch of this repo.
+      That branch uses the Erlang-based trigger code generator that
+      I originally wrote.  It's a kludge, and it requires trigger
+      and intercept files that are 100% incompatible with LFI's XML
+      configuration & source files, but it does work with FreeBSD
+      today.
 
 * C compiler toolchain based on GCC or command-line-compatible compiler.
 
@@ -93,8 +103,24 @@ Hooray!
 
 ## NIF documentation
 
-The NIFs are not yet well-documented.  Please see the EUnit test suite
-at the end of `src/faulterl_nifs.erl` for definitive documentation"".
+    peek8(GlobalName::string()) -> integer() | 'not_found' | 'error'.
+    peek16(GlobalName::string()) -> integer() | 'not_found' | 'error'.
+    peek32(GlobalName::string()) -> integer() | 'not_found' | 'error'.
+    peek64(GlobalName::string()) -> integer() | 'not_found' | 'error'.
+
+Attempt to fetch the value of a global C/C++ variable with the name
+`GlobalName` as a 8/16/32/64 bit signed integer.
+
+    poke8(GlobalName::string(), Value:integer()) -> 'ok' | 'not_found' | 'error'.
+    poke16(GlobalName::string(), Value:integer()) -> 'ok' | 'not_found' | 'error'.
+    poke32(GlobalName::string(), Value:integer()) -> 'ok' | 'not_found' | 'error'.
+    poke64(GlobalName::string(), Value:integer()) -> 'ok' | 'not_found' | 'error'.
+
+Attempt to set the value of a global C/C++ variable with the name
+`GlobalName` with a 8/16/32/64 bit signed integer `Value`.
+
+Please see the EUnit test suite at the end of `src/faulterl_nifs.erl`
+for example use of the full NIF library.
 
 ## libfi documentation
 
