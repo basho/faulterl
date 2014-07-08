@@ -13,7 +13,7 @@ endif
 all: deps compile
 
 # rebar_post_compile is typically only used by Rebar's post_hooks.
-rebar_post_compile: compile_scripts compile_scenarios
+rebar_post_compile: compile_scripts
 
 deps:
 	./rebar get-deps
@@ -28,9 +28,6 @@ clean:
 	(cd priv/lfi ; make clean)
 
 compile_scripts: ebin/example_environment.sh
-
-compile_scenarios:
-	erlc +debug_info -o ebin -I include priv/scenario/*erl
 
 ebin/example_environment.sh: priv/scripts/example_environment.sh
 	cp -p $< $@
