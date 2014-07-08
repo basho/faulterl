@@ -28,7 +28,7 @@ program.
 
     % touch /tmp/sample-file
     
-    % (cd ./deps/lfi ; ./libfi -t '/bin/rm /tmp/sample-file' ../../priv/scenario/unlink.xml)
+    % (cd ./priv/lfi ; ./libfi -t '/bin/rm /tmp/sample-file' ../../priv/scenario/unlink.xml)
     rm: /tmp/sample-file: Inappropriate ioctl for device
     Process exited normally. Exit status: 1
     
@@ -52,11 +52,11 @@ modify global-scope symbols.  Here is an example.  We build the
 
     % make
     
-    % (cd ./deps/lfi ; ./libfi ../../priv/scenario/unlink.xml)
+    % (cd ./priv/lfi ; ./libfi ../../priv/scenario/unlink.xml)
     
     % touch /tmp/sample-file
     
-    % env `ebin/example_environment.sh $PWD/deps/lfi` erl -pz ebin
+    % env `ebin/example_environment.sh $PWD/priv/lfi` erl -pz ebin
 
     1> faulterl_nif:peek8("symbol_does_not_exist").
     not_found

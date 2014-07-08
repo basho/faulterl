@@ -25,6 +25,7 @@ clean:
 	$(REBAR_BIN) clean
 	rm -f ebin/*.escript
 	rm -f ebin/*.sh
+	(cd priv/lfi ; make clean)
 
 compile_scripts: ebin/example_environment.sh
 

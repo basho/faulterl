@@ -1,0 +1,10 @@
+intercept.stub.c
+intercept.stub.cpp
+intercept.stub.dylib
+intercept.stub.dylib.dSYM
+libfi
+symbols
+profiler/*.o
+profiler/profiler
+profiler/profilermgr
+profiler/profilermgr.dSYM
