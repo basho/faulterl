@@ -37,7 +37,7 @@ extern u_int8_t g_libfi_enabled;
 */
 u_int8_t g_libfi_RandomTrigger_enabled = 1;
 u_int8_t g_libfi_RandomTrigger_reseed = 0;
-u_int8_t g_libfi_RandomTrigger_seed = 0;
+u_int32_t g_libfi_RandomTrigger_seed = 0;
 u_int8_t g_libfi_RandomTrigger_verbose = 0;
 
 RandomTrigger::RandomTrigger()

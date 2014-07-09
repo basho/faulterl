@@ -64,6 +64,7 @@ using namespace std;
 
 static int verbose = 0;
 static int default_enabled = 1;
+static char *examineargs_path = NULL;
 
 static void
 usage(char* me)
@@ -431,6 +432,15 @@ int generate_stub(char* config)
   print_triggers(xpathObjTriggers->nodesetval, outf);
   print_stubs(xpathObj->nodesetval, outf);
 
+  if (examineargs_path == NULL) {
+      outf << "char **examine_args_string[] = {};" << endl;
+      outf << "int examine_args_string_lastindex[] = {};" << endl;
+      outf << "int *examine_args_int[] = {};" << endl;
+      outf << "int examine_args_int_lastindex[] = {};" << endl;
+  } else {
+      outf << "#include \"" << examineargs_path << "\"" << endl;
+  }
+
   /* Cleanup */
   xmlXPathFreeObject(xpathObj);
   xmlXPathFreeObject(xpathObjTriggers);
@@ -593,13 +603,16 @@ int main(int argc, char* argv[], char* envp[])
   run_target = NULL;
 
   opterr = 0;
-  while ((c = getopt (argc, argv, "e:f:t:v")) != -1)
+  while ((c = getopt (argc, argv, "e:E:f:t:v")) != -1)
   {
     switch (c)
     {
     case 'e':
       default_enabled = atoi(optarg);
       break;
+    case 'E':
+        examineargs_path = optarg;
+        break;
     case 'f':
       crash_check = 1;
       crash_create = optarg;
