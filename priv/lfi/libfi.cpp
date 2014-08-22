@@ -70,7 +70,7 @@ static void
 usage(char* me)
 {
   cout << "Usage: ";
-  cout << me << " [-e 0|1] [-f] [-t <targetExecutable>] [-v] <configurationFile>" << endl;
+  cout << me << " [-e 0|1] [-E /path/to/examine_args.cpp] [-f] [-t <targetExecutable>] [-v] <configurationFile>" << endl;
 }
 
 static void
