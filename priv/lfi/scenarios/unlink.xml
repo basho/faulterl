@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  use
+    ./libfi -t "/bin/rm foofoo" unlink.xml
+  to test this scenario
+-->
+<plan>
+  <trigger id="random100" class="RandomTrigger">
+    <args>
+      <percent>100</percent>
+    </args>
+  </trigger>
+
+ <function name="unlink" argc="1" retval="-1" errno="ENOTTY">
+   <triggerx ref="random100" />
+ </function>
+ <function name="unlinkat" argc="1" retval="-1" errno="ENOTTY">
+   <triggerx ref="random100" />
+ </function>
+
+</plan>
